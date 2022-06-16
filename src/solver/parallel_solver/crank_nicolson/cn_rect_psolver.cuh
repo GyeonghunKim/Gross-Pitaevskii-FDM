@@ -18,6 +18,7 @@
 #include <string>
 #include <fstream>
 #include <thread>
+#include <mutex>
 
 #include "../../../utils.h"
 #include "../../../domain/rect_domain.h"
@@ -28,6 +29,7 @@
 #include "nvToolsExt.h"
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
+
 
 #define nTx 16
 #define nTy 16

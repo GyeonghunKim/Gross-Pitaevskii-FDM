@@ -9,8 +9,10 @@
  * 
  */
 // NVTX_USE true only for profiling
-#define NVTX_USE false
+#define NVTX_USE true
 #include "cn_rect_psolver.cuh"
+
+std::mutex mu;
 
 /**
  * @brief update Guess with Crank Nicolson Methods
@@ -470,6 +472,7 @@ void CNRectPSolver::solve(float tolerance, int max_iter, std::string dir_name, b
     
     // Setup initial condition in host
 
+
     for (auto i = 0; i < TPB.x * nBlocks.x; ++i)
     {
         for (auto j = 0; j < TPB.y * nBlocks.y; ++j)
@@ -544,6 +547,7 @@ void CNRectPSolver::solve(float tolerance, int max_iter, std::string dir_name, b
     threads.reserve(this->domain->get_num_times() - 1);
     for (auto k = 0; k < this->domain->get_num_times() - 1; ++k)
     {
+        std::cout << "time-step: " << k << std::endl;
         {   
             // Solve single time
             this->solve_single_time(k, d_psi_old_real,
@@ -568,25 +572,41 @@ void CNRectPSolver::solve(float tolerance, int max_iter, std::string dir_name, b
                                     buffer_imag,
                                     save_data);
             // Export with branched thread 
+            mu.lock();
+            float *send_buffer_real = (float *)malloc(sizeof(float) * TPB.x * nBlocks.x * TPB.y * nBlocks.y);
+            float *send_buffer_imag = (float *)malloc(sizeof(float) * TPB.x * nBlocks.x * TPB.y * nBlocks.y);
+            memcpy(send_buffer_real, buffer_real, sizeof(float) * TPB.x * nBlocks.x * TPB.y * nBlocks.y);
+            memcpy(send_buffer_imag, buffer_imag, sizeof(float) * TPB.x * nBlocks.x * TPB.y * nBlocks.y);
             auto export_thread = std::thread(&CNRectPSolver::export_single_time,
                                              this,
                                              k,
-                                             buffer_real,
-                                             buffer_imag,
+                                             send_buffer_real,
+                                             send_buffer_imag,
                                              nBlocks,
                                              TPB,
                                              save_data);
+            // export_thread.detach();                               
             // Push back to threads vector
             threads.push_back(std::move(export_thread));
+            mu.unlock();
         }
     }
-
+    
+    std::cout << "For loop escape" << std::endl;
     // Wait for all export process is done.
+    for(auto i = 0; i < this->domain->get_num_times(); ++i){
+
+        std::cout << i << " th thread joined" << std::endl;
+        if (threads[i].joinable()){
+            threads[i].join();
+        }
+    }
     for (std::thread &th : threads)
     {
         if (th.joinable())
             th.join();
     }
+    std::cout << "join finished" << std::endl;
 
     cudaFreeHost(h_psi_new_real);
     cudaFreeHost(h_psi_new_imag);
@@ -881,10 +901,12 @@ void CNRectPSolver::export_single_time(int k,
             }
         }
         outfile.close();
-        this->domain->update_time();
+        // this->domain->update_time();
     }
-    else
-        this->domain->update_time(true);
+    else{
+
+    }
+        // this->domain->update_time(true);
     if (NVTX_USE)
     {
         nvtxRangePop();
