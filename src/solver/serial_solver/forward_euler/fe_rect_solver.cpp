@@ -1,6 +1,22 @@
+/**
+ * @file fe_rect_solver.cpp
+ * @author Minyoung Kim, Gyeonghun Kim
+ * @brief Implementation file for serial forward euler solver methods
+ * @version 0.1
+ * @date 2022-06-05
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #include "fe_rect_solver.h"
-#include <iostream>
-#include <string>
+
+/**
+ * @brief Construct a new FERectSolver::FERectSolver object
+ * 
+ * @param g_ 
+ * @param domain_ 
+ */
 FERectSolver::FERectSolver(
     float g_,
     RectangularDomain *domain_)
@@ -10,11 +26,20 @@ FERectSolver::FERectSolver(
     this->string_info = std::string{"Forward_Euler_serial_"};
    
 };
+
+/**
+ * @brief Get Potential value on each grid point.
+ * 
+ * @param i 
+ * @param j 
+ * @return float 
+ */
 float FERectSolver::get_potential_value(int i, int j)
 {
 
     return this->domain->potential_grid->at(i, j)->value.real();
 }
+
 /**
  * @brief Time differential of phi 
  * 
@@ -56,19 +81,7 @@ std::complex<float> FERectSolver::temporal_equation(int i, int j, int k)
     //df denote time differential of dt (d(psi)/dt)
     // = (laplace - V-g|psi|^2) psi
     std::complex<float> df =
-        +(
-            (point_data_r->value) + 
-            (point_data_l->value) - 
-            (point_data->value) * std::complex<float>{2}) / (std::complex<float>{dx * dx}) + 
-            
-            ((point_data_u->value) + 
-            (point_data_d->value) - 
-            (point_data->value) * std::complex<float>{2}) / (std::complex<float>{dy * dy}) - 
-            (V_ij + additional_term) * (point_data->value);
-
-    
-
-    
+        +((point_data_r->value) + (point_data_l->value) - (point_data->value) * std::complex<float>{2}) / (std::complex<float>{dx * dx}) + ((point_data_u->value) + (point_data_d->value) - (point_data->value) * std::complex<float>{2}) / (std::complex<float>{dy * dy}) - (V_ij + additional_term) * (point_data->value);
     df *= std::complex<float>{0, 1};
 
     return df;
@@ -92,6 +105,14 @@ void FERectSolver::solve_single_time(int k)
         }
     }
 }
+
+/**
+ * @brief Solve Equation
+ * 
+ * @param dir_name 
+ * @param print_info 
+ * @param save_data 
+ */
 void FERectSolver::solve(std::string dir_name, bool print_info, bool save_data)
 {
     int time_length = this->domain->get_num_times();

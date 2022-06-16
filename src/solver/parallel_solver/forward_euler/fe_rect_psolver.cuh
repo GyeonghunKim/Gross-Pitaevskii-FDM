@@ -1,7 +1,22 @@
+/**
+ * @file fe_rect_psolver.cuh
+ * @author Gyeonghun Kim, Minyoung Kim
+ * @brief Header file for CUDA based parallel forward euler solver
+ * @version 0.1
+ * @date 2022-06-05
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #pragma once
 #include <complex>
 #include <vector>
 #include <functional>
+#include <iostream>
+#include <string>
+#include <stdio.h>
+
 #include "../../../domain/rect_domain.h"
 #include "../../../initial_condition/initial_condition.h"
 #include "../../base_solver.h"
@@ -12,6 +27,10 @@
 #define nTx 16
 #define nTy 16
 
+/**
+ * @brief Forward Euler solver with Parallel CUDA algorithm
+ * 
+ */
 class FERectPSolver : public BaseSolver
 {
 public:
