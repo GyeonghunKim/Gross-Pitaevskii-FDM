@@ -28,21 +28,5 @@ TEST(FEPSolverTest, InitializeSolveTest)
 
     solver.solve("", false, false);
 
-    ASSERT_FLOAT_EQ((*domain).at(10, 10, 1)->value.real(), 0.096875511);
-}
-
-bool test_fe_rect_psolver()
-{
-}
-
-bool test_all_fe_rect_psolver()
-{
-    if (test_fe_rect_psolver())
-    {
-        std::cout << "test_all_forward_euler_rectangular_serial_solver succeeded!" << std::endl;
-    }
-    else
-    {
-        std::cout << "test_all_forward_euler_rectangular_serial_solver failed!" << std::endl;
-    }
+    ASSERT_FLOAT_EQ((*domain).at(10, 10, 1)->value.real(), -0.027037166);
 }

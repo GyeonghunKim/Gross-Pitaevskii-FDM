@@ -1,15 +1,23 @@
-#include <string>
-#include <vector>
-#include <map>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <sstream>
+/**
+ * @file config_parser.cpp
+ * @author Gyeonghun Kim, Minyoung Kim
+ * @brief Configuration Parser class implementation. 
+ * @version 0.1
+ * @date 2022-06-09
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 
-#include "parameters.h"
 #include "config_parser.h"
 
-
+/**
+ * @brief Parse configuration for the calculation
+ * 
+ * @param config_name configuration name
+ * @param filename configuration file name
+ * @return Parsed parameters 
+ */
 Parameters ConfigParser::parse(std::string config_name, std::string filename){
     auto parameters = Parameters();
     parameters.config_name = config_name;
@@ -23,22 +31,28 @@ Parameters ConfigParser::parse(std::string config_name, std::string filename){
     bool filled_parallel = false;
 
     std::ifstream file(filename.c_str());
-    if (file.is_open())
+    if (file.is_open()) // If file is opened
     {
         std::string line;
-        while (std::getline(file, line))
+        while (std::getline(file, line)) // while not EOF 
         {
-            line.erase(std::remove(line.begin(), line.end(), ' '), line.end());
+            // remove all blanks in the line
+            line.erase(std::remove(line.begin(), line.end(), ' '), line.end()); 
+            // replace all lines with lower case
             std::transform(line.begin(), line.end(), line.begin(),
                            [](unsigned char c)
                            { return std::tolower(c); });
+
+            // skip the line when whole line is blank
             if (line == ""){
                 continue;
             }
+            // skip the line for the comment
             else if (line.rfind("#", 0) != std::string::npos)
             {
                 continue;
             }
+            // Divide the configuration branches (0 for main,  1 for domain, 2 for initial condition, 3 for eqution, 4 for solver)
             else if (line.rfind("[mainconfiguration]", 0) != std::string::npos)
             {
                 mode = 0;
@@ -59,10 +73,13 @@ Parameters ConfigParser::parse(std::string config_name, std::string filename){
             {
                 mode = 4;
             }
+            // Do action for each branches
             else{
+                // Handle exception
                 if (mode == -1){
                     std::cerr << "Unexpected Configuration File" << std::endl;
                 }
+                // Main branch 
                 else if(mode == 0){
                     std::vector<std::string> dump;
                     std::string tmp;
@@ -159,6 +176,7 @@ Parameters ConfigParser::parse(std::string config_name, std::string filename){
                         }
                     }
                 }
+                // domain branch
                 else if(mode == 1){
                     std::vector<std::string> dump;
                     std::string tmp;
@@ -218,6 +236,7 @@ Parameters ConfigParser::parse(std::string config_name, std::string filename){
                         }
                     }
                 }
+                // initial condition branches
                 else if(mode == 2){
                     std::vector<std::string> dump;
                     std::string tmp;
@@ -255,6 +274,7 @@ Parameters ConfigParser::parse(std::string config_name, std::string filename){
                         }
                     }
                 }
+                // eqution branch
                 else if(mode == 3){
                     std::vector<std::string> dump;
                     std::string tmp;
@@ -304,6 +324,7 @@ Parameters ConfigParser::parse(std::string config_name, std::string filename){
                         }
                     }
                 }
+                // solver branch
                 else if (mode == 4){
                     std::vector<std::string> dump;
                     std::string tmp;
@@ -392,7 +413,7 @@ Parameters ConfigParser::parse(std::string config_name, std::string filename){
                         }
                         else if (dump[1].rfind("false", 0) != std::string::npos)
                         {
-                            solver_parameters.print_info = false;
+                            solver_parameters.save_data = false;
                         }
                         else
                         {
@@ -455,6 +476,7 @@ Parameters ConfigParser::parse(std::string config_name, std::string filename){
             }
         }
     }
+    // setup parameters
     parameters.main_parameters = main_parameters;
     parameters.domain_parameters = domain_parameters;
     parameters.init_cond_parameters = init_parameters;
@@ -463,6 +485,12 @@ Parameters ConfigParser::parse(std::string config_name, std::string filename){
     return parameters;
 }
 
+
+/**
+ * @brief Setup parameters with default values
+ * 
+ * @return Parameters 
+ */
 Parameters ConfigParser::get_default()
 {
     auto parameters = Parameters();

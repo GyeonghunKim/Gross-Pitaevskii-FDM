@@ -1,12 +1,14 @@
+/**
+ * @file base_domain.cpp
+ * @author Minyoung Kim, Gyeonghun Kim
+ * @brief Implementation of methods in the Base Domain class.
+ * @version 0.1
+ * @date 2022-06-03
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include "base_domain.h"
-#include <iostream>
-#include <fstream>
-#include <iomanip>
-#include <ctime>
-#include <sstream>
-#include <experimental/filesystem>
-
-namespace fs = std::experimental::filesystem;
 
 GridPoint::GridPoint(float x_, float y_, std::complex<float> wave_function_) : x(x_), y(y_), value(wave_function_) {}
 GridPoint::~GridPoint(){};
@@ -21,6 +23,8 @@ BaseSpatialGrid::BaseSpatialGrid(int num_grid_1, int num_grid_2)
     {
         this->spatial_data[i] = std::vector<GridPoint>(num_grid_2);
     }
+    this-> infinitesimal_distance_1 = 1.f; 
+    this -> infinitesimal_distance_2 = 1.f;
 }
 
 void BaseSpatialGrid::normalize()
@@ -31,7 +35,7 @@ void BaseSpatialGrid::normalize()
         for (auto j = 0; j < this->num_grid_2; ++j)
         {
             auto wave_func = this->at(i, j)->value;
-            sum += std::pow(std::abs(wave_func), 2);
+            sum += float(std::pow(std::abs(wave_func), 2));
         }
     }
     sum = std::sqrt(sum * this->infinitesimal_distance_1 * this->infinitesimal_distance_2);
@@ -42,6 +46,7 @@ void BaseSpatialGrid::normalize()
             this->at(i, j)->value /= sum;
         }
     }
+    
 }
 BaseSpatialGrid::~BaseSpatialGrid()
 {
@@ -227,27 +232,12 @@ void BaseDomain::generate_directory_name(std::string info, bool print_info)
  * @param grid grid at t
  * @param filename file name to store data
  */
-void BaseDomain::generate_single_txt_file(std::string filename, bool cuda_mode, float **buffer, int buffer_n_x)
+void BaseDomain::generate_single_txt_file(std::string filename, bool cuda_mode)
 {
-    if (cuda_mode)
-    {
-        std::ofstream outfile(this->PATH + filename + ".txt");
-        outfile << "x, y, real, imag, magn, phase " << std::endl;
-        for (auto i = 0; i < num_grid_1; ++i)
-        {
-            for (auto j = 0; j < num_grid_2; ++j)
-            {
-                std::complex<float> value = {buffer[2][buffer_n_x * j + i], buffer[3][buffer_n_x * j + i]};
-                outfile << buffer[0][buffer_n_x * j + i] << ", " << buffer[1][buffer_n_x * j + i] << ", ";
-                outfile << buffer[2][buffer_n_x * j + i] << ", " << buffer[3][buffer_n_x * j + i] << ", ";
-                outfile << std::abs(value) << ", " << std::arg(value);
-                outfile << std::endl;
-            }
-        }
-        outfile.close();
+    if (cuda_mode){
+        this->update_time(cuda_mode);
     }
-    else
-    {
+    else{
         std::ofstream outfile(this->PATH + filename + ".txt");
         outfile << "x, y, real, imag, magn, phase " << std::endl;
         for (auto i = 0; i < num_grid_1; ++i)
@@ -263,9 +253,9 @@ void BaseDomain::generate_single_txt_file(std::string filename, bool cuda_mode, 
             }
         }
         outfile.close();
-        //After saving data, update domain
+        // After saving data, update domain
+        this->update_time();
     }
-    this->update_time(cuda_mode);
 };
 
 void BaseDomain::print_directory_info()
@@ -277,12 +267,11 @@ void BaseDomain::print_directory_info()
 
 void BaseDomain::update_time(bool cuda_mode)
 {
-    if (cuda_mode)
-    {
+    if (cuda_mode){
         this->current_time_index += 1;
     }
-    else
-    {
+    else{
+
         this->current_time_index += 1;
         delete (this->old_grid);
         this->old_grid = this->current_grid;

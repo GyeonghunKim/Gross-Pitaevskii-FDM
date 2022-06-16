@@ -1,18 +1,48 @@
+/**
+ * @file base_domain.h
+ * @author Minyoung Kim, Gyeonghun Kim
+ * @brief Header for Base domain class
+ * @version 0.1
+ * @date 2022-06-03
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+
 #pragma once
 #include <complex>
 #include <vector>
-#include <string.h>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <ctime>
+#include <sstream>
+#include <experimental/filesystem>
+
+// setup filesystem
+namespace fs = std::experimental::filesystem;
+
+
+/**
+ * @brief Grid point class (single point)
+ * 
+ */
 class GridPoint
 {
 public:
     GridPoint() = default;
     GridPoint(float x, float y, std::complex<float> wave_function);
     float x, y;
-    //potential value
+    // potential value
     std::complex<float> value;
     ~GridPoint();
 };
 
+/**
+ * @brief Base Spatial Grid class for single time step
+ * 
+ */
 class BaseSpatialGrid
 {
 public:
@@ -30,6 +60,10 @@ protected:
     int num_grid_1, num_grid_2;
 };
 
+/**
+ * @brief Base domain class containing multiple time steps and export methods.
+ * 
+ */
 class BaseDomain
 {
 public:
@@ -41,7 +75,7 @@ public:
     int get_num_times();
     int get_num_grid_1();
     int get_num_grid_2();
-    //For boundary
+    // For boundary
     GridPoint *get_null_gridpt();
     GridPoint *at(int index_1, int index_2, int time_index);
     void assign_initial_value(int index_1, int index_2, std::complex<float> value);
@@ -50,7 +84,7 @@ public:
     float get_infinitesimal_distance1();
     float get_infinitesimal_distance2();
     void generate_directory_name(std::string info, bool print_info = true);
-    void generate_single_txt_file(std::string filenam, bool cuda_mode = false, float **buffer = 0, int buffer_n_x = 0);
+    void generate_single_txt_file(std::string filename, bool cuda_mode = false);
     void normalize(int time_index);
     void print_directory_info();
     int get_current_time_index();

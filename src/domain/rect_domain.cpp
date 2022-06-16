@@ -1,6 +1,18 @@
+/**
+ * @file rect_domain.cpp
+ * @author Minyoung Kim, Gyeonghun Kim
+ * @brief Implementation of methods in the Rectangular Domain class.
+ * @version 0.1
+ * @date 2022-06-02
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
 #include "rect_domain.h"
 #include <fstream>
 #include <iostream>
+
+
 /**
  * @brief Construct a new Rectangular Spatial Grid:: Rectangular Spatial Grid object
  * 
@@ -38,6 +50,29 @@ RectangularSpatialGrid::RectangularSpatialGrid(
         }
     }
 }
+void RectangularSpatialGrid::normalize()
+{
+    float sum = 0.;
+    for (auto i = 0; i < this->num_grid_1; ++i)
+    {
+        for (auto j = 0; j < this->num_grid_2; ++j)
+        {
+            auto wave_func = this->at(i, j)->value;
+            sum += float(std::pow(std::abs(wave_func), 2));
+        }
+    }
+    sum = std::sqrt(sum * this->infinitesimal_distance_1 * this->infinitesimal_distance_2);
+    for (auto i = 0; i < this->num_grid_1; ++i)
+    {
+        for (auto j = 0; j < this->num_grid_2; ++j)
+        {
+            this->at(i, j)->value /= sum;
+        }
+    }
+    
+}
+
+
 RectangularSpatialGrid::~RectangularSpatialGrid(){
 
 };
@@ -92,11 +127,11 @@ float RectangularDomain::get_y_start()
 }
 float RectangularDomain::get_x_end()
 {
-    this->x_end;
+    return this->x_end;
 }
 float RectangularDomain::get_y_end()
 {
-    this->x_end;
+    return this->x_end;
 }
 
 void RectangularDomain::update_time(bool cuda_mode)
@@ -109,29 +144,16 @@ void RectangularDomain::update_time(bool cuda_mode)
     {
         this->current_time_index += 1;
         delete (this->old_grid);
-        this->old_grid = &(*(this->current_grid));
+        this->old_grid = this->current_grid;
         this->current_grid = new RectangularSpatialGrid(num_grid_1, num_grid_2, x_start, x_end, y_start, y_end);
     }
 }
-//replace function again since update_time function is changed
-void RectangularDomain::generate_single_txt_file(std::string filename, bool cuda_mode, float **buffer, int buffer_n_x)
+// replace function again since update_time function is changed
+void RectangularDomain::generate_single_txt_file(std::string filename, bool cuda_mode)
 {
     if (cuda_mode)
     {
-        std::ofstream outfile(this->PATH + filename + ".txt");
-        outfile << "x, y, real, imag, magn, phase " << std::endl;
-        for (auto i = 0; i < num_grid_1; ++i)
-        {
-            for (auto j = 0; j < num_grid_2; ++j)
-            {
-                std::complex<float> value = {buffer[2][buffer_n_x * j + i], buffer[3][buffer_n_x * j + i]};
-                outfile << buffer[0][buffer_n_x * j + i] << ", " << buffer[1][buffer_n_x * j + i] << ", ";
-                outfile << buffer[2][buffer_n_x * j + i] << ", " << buffer[3][buffer_n_x * j + i] << ", ";
-                outfile << std::abs(value) << ", " << std::arg(value);
-                outfile << std::endl;
-            }
-        }
-        outfile.close();
+        this->update_time(cuda_mode);
     }
     else
     {
@@ -150,10 +172,11 @@ void RectangularDomain::generate_single_txt_file(std::string filename, bool cuda
             }
         }
         outfile.close();
+        // After saving data, update domain
+        this->update_time();
     }
-    //After saving data, update domain
-    this->update_time(cuda_mode);
 };
+
 void RectangularDomain::reset()
 {
     BaseDomain::reset();
@@ -162,4 +185,5 @@ void RectangularDomain::reset()
     this->old_grid = new RectangularSpatialGrid(num_grid_1, num_grid_2, x_start, x_end, y_start, y_end);
     this->current_grid = new RectangularSpatialGrid(num_grid_1, num_grid_2, x_start, x_end, y_start, y_end);
     this->potential_grid = new RectangularSpatialGrid(num_grid_1, num_grid_2, x_start, x_end, y_start, y_end);
+
 }
